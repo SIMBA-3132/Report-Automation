@@ -2,8 +2,9 @@ import os
 import time
 from datetime import datetime
 from google import genai
+from google.genai import types
 from dotenv import load_dotenv
-from data_processor import analyze_financial_data  # <-- Importerar Person B:s kod!
+from data_processor import analyze_financial_data
 
 # 1. Ladda in variabler från .env
 load_dotenv()
@@ -12,21 +13,29 @@ api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("Hittade ingen GEMINI_API_KEY i .env-filen!")
 
-client = genai.Client(api_key=api_key)
+# Sätt en maxgräns (timeout) på 10 sekunder per anrop (10 000 millisekunder)
+# så att programmet aldrig fastnar och hänger sig!
+client = genai.Client(
+    api_key=api_key,
+    http_options=types.HttpOptions(timeout=10000)
+)
 
-# 2. Hämta tillgängliga textmodeller
+# 2. Hämta tillgängliga textmodeller och lägg de snabbaste FÖRST
 def get_available_text_models():
-    exclude_keywords = ["tts", "vision", "image", "embedding", "aqa", "audio", "thinking", "learnlm"]
+    # Vi lägger till "2.5" och "2.0" i exkluderingslistan eftersom de är utfasade för nya konton
+    exclude_keywords = ["tts", "vision", "image", "embedding", "aqa", "audio", "thinking", "learnlm", "2.5", "2.0", "1.5"]
     models = []
     for m in client.models.list():
         name = m.name.lower()
         if "gemini" in name and "generateContent" in m.supported_actions:
             if not any(bad_word in name for bad_word in exclude_keywords):
                 models.append(m.name)
-    models.sort(key=lambda x: ("3.8" in x, "flash" in x), reverse=True)
+    
+    # Sortera så att "lite"-modeller (som nästan aldrig har kö) testas allra först!
+    models.sort(key=lambda x: ("lite" in x, "3.8" in x, "flash" in x), reverse=True)
     return models
 
-# 3. Generera rapport med fallback
+# 3. Generera rapport med snabb fallback
 def generate_report_safely(prompt_text):
     candidate_models = get_available_text_models()
     for model_name in candidate_models:
@@ -40,11 +49,11 @@ def generate_report_safely(prompt_text):
                 print(f"✅ Lyckades med {model_name}!\n")
                 return response.text
         except Exception as e:
-            print(f"⚠️ {model_name} var upptagen ({type(e).__name__}). Byter till nästa...")
-            time.sleep(1)
+            print(f"⚠️ {model_name} svarade inte inom 10s eller var upptagen ({type(e).__name__}). Byter direkt...")
+            time.sleep(0.5)
     raise RuntimeError("Alla modeller var tillfälligt upptagna.")
 
-# 4. Hämta den uträknade datan från Person B:s Pandas-modul
+# 4. Hämta den uträknade datan från Pandas-modulen
 print("Läser in och analyserar ekonomi.csv med Pandas...")
 beraknad_data = analyze_financial_data("ekonomi.csv")
 
