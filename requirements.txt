@@ -2,3 +2,8 @@ azure-functions
 google-genai
 python-dotenv
 pandas
+azure-functions
+google-genai
+python-dotenv
+pandas
+markdown
