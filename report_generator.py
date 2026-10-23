@@ -66,6 +66,8 @@ Dataunderlag:
 
 # Om du kör "python report_generator.py" lokalt på datorn körs detta block:
 if __name__ == "__main__":
+    from email_sender import send_report_email  # <-- 1. Hämtar din mejlfunktion
+    
     print("Kör rapporten lokalt...")
     rapport_text = create_ai_report()
     dagens_datum = datetime.now().strftime("%Y-%m-%d")
@@ -74,3 +76,6 @@ if __name__ == "__main__":
         f.write(rapport_text)
     print(rapport_text)
     print(f"\n📄 Rapporten har sparats lokalt som: {filnamn}")
+    
+    # 2. Skickar den färdiga rapporten på mejl!
+    send_report_email(rapport_text)

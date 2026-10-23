@@ -219,3 +219,4 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 manadsrapport_*.md
+.python_packages
