@@ -1,0 +1,6 @@
+.git*
+.vscode
+venv/
+.env
+manadsrapport_*.md
+__pycache__/
