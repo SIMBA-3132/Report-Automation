@@ -3,7 +3,7 @@ import logging
 from report_generator import create_ai_report
 from email_sender import send_report_email, format_as_html
 
-app = func.FunctionApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.route(route="generate_report")
 def generate_report_http(req: func.HttpRequest) -> func.HttpResponse:
